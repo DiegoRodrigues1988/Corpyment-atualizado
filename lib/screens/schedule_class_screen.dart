@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../helpers/database_helper.dart';
-import '../helpers/notification_helper.dart'; // Importe o helper de notificação
+import '../helpers/notification_helper.dart';
 import '../models/class_event_model.dart';
 import '../models/student_model.dart';
 
@@ -17,17 +17,39 @@ class ScheduleClassScreen extends StatefulWidget {
 class _ScheduleClassScreenState extends State<ScheduleClassScreen> {
   TimeOfDay? _selectedTime;
   List<Student> _allStudents = [];
+  List<Student> _filteredStudents = []; // Nova lista para os resultados da busca
   final List<Student> _selectedStudents = [];
+  final TextEditingController _searchController = TextEditingController(); // Controlador para o campo de busca
 
   @override
   void initState() {
     super.initState();
     _loadStudents();
+    _searchController.addListener(_filterStudents); // Adiciona um "ouvinte" para a busca
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose(); // Libera o controlador da memória
+    super.dispose();
   }
 
   Future<void> _loadStudents() async {
     final students = await DatabaseHelper.instance.readAllStudents();
-    setState(() => _allStudents = students);
+    setState(() {
+      _allStudents = students;
+      _filteredStudents = students; // No início, a lista filtrada é a lista completa
+    });
+  }
+
+  // Função que filtra os alunos com base no que foi digitado
+  void _filterStudents() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredStudents = _allStudents.where((student) {
+        return student.name.toLowerCase().startsWith(query);
+      }).toList();
+    });
   }
 
   Future<void> _pickTime() async {
@@ -52,10 +74,7 @@ class _ScheduleClassScreenState extends State<ScheduleClassScreen> {
       studentNames: _selectedStudents.map((s) => s.name).join(', '),
     );
 
-    // Salva o evento e pega o objeto retornado com o ID
     final savedEvent = await DatabaseHelper.instance.createClassEvent(newEventData);
-
-    // --- AGENDA A NOTIFICAÇÃO ---
     await NotificationHelper().scheduleNotificationForClass(savedEvent);
 
     if (mounted) Navigator.of(context).pop(true);
@@ -77,17 +96,29 @@ class _ScheduleClassScreenState extends State<ScheduleClassScreen> {
               onTap: _pickTime,
             ),
             const Divider(),
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Text('Selecione os Alunos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+
+            // --- NOVO CAMPO DE BUSCA ---
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  labelText: 'Buscar aluno pelo nome...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
             ),
+
             Expanded(
-              child: _allStudents.isEmpty
-                  ? const Center(child: Text('Nenhum aluno cadastrado.'))
+              child: _filteredStudents.isEmpty
+                  ? const Center(child: Text('Nenhum aluno encontrado.'))
                   : ListView.builder(
-                itemCount: _allStudents.length,
+                itemCount: _filteredStudents.length, // Usa a lista filtrada
                 itemBuilder: (context, index) {
-                  final student = _allStudents[index];
+                  final student = _filteredStudents[index]; // Usa a lista filtrada
                   final isSelected = _selectedStudents.contains(student);
                   return CheckboxListTile(
                     title: Text(student.name),

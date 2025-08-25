@@ -1,6 +1,7 @@
 // lib/screens/agenda_screen.dart
 import 'dart:collection';
-import 'package:flutter/material.dart'; // <-- Import corrigido aqui
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../helpers/database_helper.dart';
@@ -65,11 +66,19 @@ class _AgendaScreenState extends State<AgendaScreen> {
     }
   }
 
-  Future<void> _contactStudent(String studentName) async {
+  // --- FUNÇÃO DO WHATSAPP ATUALIZADA ---
+  Future<void> _contactStudent(String studentName, ClassEvent event) async {
     final students = await DatabaseHelper.instance.readAllStudents();
     try {
       final student = students.firstWhere((s) => s.name.trim() == studentName.trim());
-      final Uri whatsappUri = Uri.parse("https://wa.me/${student.phone}?text=Olá, ${student.name}! Lembrete da sua aula de Pilates hoje.");
+
+      // Formata a data e cria a mensagem personalizada
+      final formattedDate = DateFormat('dd/MM/yyyy').format(event.date);
+      final message = "Olá, ${student.name}! Lembrete da sua aula de Pilates agendada para o dia $formattedDate às ${event.time}.";
+
+      // Codifica a mensagem para ser usada em uma URL
+      final Uri whatsappUri = Uri.parse("https://wa.me/${student.phone}?text=${Uri.encodeComponent(message)}");
+
       if (!mounted) return;
       if (!await launchUrl(whatsappUri, mode: LaunchMode.externalApplication)) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Não foi possível abrir o WhatsApp.")));
@@ -144,7 +153,8 @@ class _AgendaScreenState extends State<AgendaScreen> {
                       trailing: IconButton(
                         tooltip: 'Avisar no WhatsApp',
                         icon: const Icon(Icons.message, color: Colors.green),
-                        onPressed: () => _contactStudent(name.trim()),
+                        // Passa o evento para a função de contato
+                        onPressed: () => _contactStudent(name.trim(), event),
                       ),
                     )).toList(),
                   ),
