@@ -2,89 +2,132 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../helpers/database_helper.dart';
 import '../models/student_model.dart';
+import 'edit_student_details_screen.dart'; // Importe a nova tela de edição
 
-class StudentDetailScreen extends StatelessWidget {
+class StudentDetailScreen extends StatefulWidget {
   final Student student;
-
   const StudentDetailScreen({super.key, required this.student});
+
+  @override
+  State<StudentDetailScreen> createState() => _StudentDetailScreenState();
+}
+
+class _StudentDetailScreenState extends State<StudentDetailScreen> {
+  late Student _student;
+
+  @override
+  void initState() {
+    super.initState();
+    _student = widget.student;
+  }
+
+  // Navega para a tela de edição e atualiza os dados ao voltar
+  void _navigateToEditScreen() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditStudentDetailsScreen(student: _student),
+      ),
+    );
+
+    if (result == true && mounted) {
+      // Recarrega os dados do aluno do banco de dados para garantir que estão atualizados
+      final updatedStudent = await DatabaseHelper.instance.readOneStudent(_student.id!);
+      setState(() {
+        _student = updatedStudent;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(student.name),
+        title: Text(_student.name),
+        actions: [
+          // --- BOTÃO DE EDITAR ---
+          IconButton(
+            icon: const Icon(Icons.edit_note),
+            tooltip: 'Editar Ficha',
+            onPressed: _navigateToEditScreen,
+          ),
+        ],
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16.0),
-        child: Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+        children: [
+          _buildSectionCard(
+            context,
+            title: 'Dados Pessoais e de Contato',
+            icon: Icons.person_outline,
+            details: {
+              'Nome Completo': _student.name, 'E-mail': _student.email, 'Telefone': _student.phone,
+              'Data de Nascimento': _student.birthDate, 'CPF/RG': _student.cpf, 'Endereço': _student.address,
+              'Contato de Emergência': _student.emergencyContact,
+            },
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                // Agora passamos o 'context' para a função auxiliar.
-                _buildDetailRow(
-                  context: context, // Passando o contexto
-                  icon: Icons.person_outline,
-                  title: 'Nome Completo',
-                  subtitle: student.name,
-                ),
-                const Divider(),
-                _buildDetailRow(
-                  context: context, // Passando o contexto
-                  icon: Icons.email_outlined,
-                  title: 'E-mail',
-                  subtitle: student.email,
-                ),
-                const Divider(),
-                _buildDetailRow(
-                  context: context, // Passando o contexto
-                  icon: Icons.phone_outlined,
-                  title: 'Telefone',
-                  subtitle: student.phone,
-                ),
-                const Divider(),
-                _buildDetailRow(
-                  context: context, // Passando o contexto
-                  icon: Icons.calendar_today_outlined,
-                  title: 'Data de Cadastro',
-                  subtitle: DateFormat('dd/MM/yyyy \'às\' HH:mm')
-                      .format(student.startDate),
-                ),
-              ],
+          const SizedBox(height: 16),
+          _buildSectionCard(
+            context,
+            title: 'Dados de Saúde e Histórico',
+            icon: Icons.monitor_heart_outlined,
+            details: {
+              'Peso': _student.weight, 'Altura': _student.height, 'Condições Médicas': _student.medicalConditions,
+              'Histórico de Lesões': _student.injuryHistory, 'Cirurgias': _student.surgeries, 'Restrições Médicas': _student.medicalRestrictions,
+              'Medicamentos': _student.medications, 'Nível de Atividade': _student.activityLevel,
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildSectionCard(
+            context,
+            title: 'Controle Administrativo',
+            icon: Icons.business_center_outlined,
+            details: {
+              'Data de Matrícula': DateFormat('dd/MM/yyyy \'às\' HH:mm').format(_student.startDate),
+              'Plano': _student.plan, 'Pagamento': _student.paymentDetails, 'Horários / Turmas': _student.schedule,
+              'Observações do Instrutor': _student.instructorNotes,
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionCard(BuildContext context, {required String title, required IconData icon, required Map<String, String?> details}) {
+    final validDetails = Map.fromEntries(details.entries.where((entry) => entry.value != null && entry.value!.trim().isNotEmpty));
+    if (validDetails.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            ListTile(
+              leading: Icon(icon, color: Theme.of(context).primaryColor),
+              title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             ),
-          ),
+            const Divider(),
+            ...validDetails.entries.map((entry) {
+              return _buildDetailRow(context, title: entry.key, subtitle: entry.value!);
+            }).toList(),
+          ],
         ),
       ),
     );
   }
 
-  // A função agora recebe o BuildContext como parâmetro.
-  Widget _buildDetailRow({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return ListTile(
-      // ERRO E AVISO CORRIGIDOS AQUI:
-      // 1. Agora temos acesso ao 'context'.
-      // 2. Usamos .withAlpha() em vez de .withOpacity().
-      leading: Icon(icon,
-          color: Theme.of(context).primaryColor.withAlpha(179)), // Opacidade de 70%
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(fontSize: 16, color: Colors.black87),
+  Widget _buildDetailRow(BuildContext context, {required String title, required String subtitle}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('$title: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(subtitle, style: const TextStyle(fontSize: 16, color: Colors.black87))),
+        ],
       ),
     );
   }

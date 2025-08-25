@@ -1,6 +1,6 @@
 // lib/helpers/database_helper.dart
 
-import 'package:sqflite/sqflite.dart'; // <-- O ERRO ESTAVA AQUI
+import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/student_model.dart';
 
@@ -18,7 +18,6 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-
     return await openDatabase(path, version: 2, onCreate: _createDB, onUpgrade: _upgradeDB);
   }
 
@@ -73,6 +72,33 @@ class DatabaseHelper {
     const orderBy = 'name ASC';
     final result = await db.query('students', orderBy: orderBy);
     return result.map((json) => Student.fromMap(json)).toList();
+  }
+
+  // --- NOVA FUNÇÃO PARA LER UM ÚNICO ALUNO ---
+  Future<Student> readOneStudent(int id) async {
+    final db = await instance.database;
+    final maps = await db.query(
+      'students',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return Student.fromMap(maps.first);
+    } else {
+      throw Exception('ID $id não encontrado');
+    }
+  }
+
+  // --- NOVA FUNÇÃO PARA ATUALIZAR UM ALUNO ---
+  Future<int> update(Student student) async {
+    final db = await instance.database;
+    return db.update(
+      'students',
+      student.toMap(),
+      where: 'id = ?',
+      whereArgs: [student.id],
+    );
   }
 
   Future<int> delete(int id) async {

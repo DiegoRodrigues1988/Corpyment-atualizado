@@ -19,22 +19,17 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   final _phoneController = TextEditingController();
   bool _isLoading = false;
 
-  // A função para selecionar a data foi removida.
-
   Future<void> _submitData() async {
-    // A validação do formulário continua a mesma.
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // Cria o novo aluno, usando DateTime.now() para a data de início.
       final newStudent = Student(
         name: _nameController.text,
         email: _emailController.text,
         phone: _phoneController.text,
-        startDate: DateTime.now(), // <-- MUDANÇA PRINCIPAL AQUI
+        startDate: DateTime.now(),
       );
 
-      // Salva o aluno no banco de dados local.
       await DatabaseHelper.instance.create(newStudent);
 
       if (mounted) {
@@ -84,9 +79,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                 decoration: const InputDecoration(labelText: 'E-mail'),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null ||
-                      value.trim().isEmpty ||
-                      !value.contains('@')) {
+                  if (value == null || !value.contains('@')) {
                     return 'Por favor, insira um e-mail válido.';
                   }
                   return null;
@@ -103,7 +96,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                   return null;
                 },
               ),
-              // A seção de seleção de data foi removida da interface.
               const SizedBox(height: 40),
               if (_isLoading)
                 const Center(child: CircularProgressIndicator())
