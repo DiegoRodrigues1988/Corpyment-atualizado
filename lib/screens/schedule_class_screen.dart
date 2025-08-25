@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../helpers/database_helper.dart';
+import '../helpers/notification_helper.dart'; // Importe o helper de notificação
 import '../models/class_event_model.dart';
 import '../models/student_model.dart';
 
@@ -44,15 +45,20 @@ class _ScheduleClassScreenState extends State<ScheduleClassScreen> {
       return;
     }
 
-    final newEvent = ClassEvent(
+    final newEventData = ClassEvent(
       date: widget.selectedDate,
       time: _selectedTime!.format(context),
       studentIds: _selectedStudents.map((s) => s.id.toString()).join(','),
       studentNames: _selectedStudents.map((s) => s.name).join(', '),
     );
 
-    await DatabaseHelper.instance.createClassEvent(newEvent);
-    if (mounted) Navigator.of(context).pop(true); // Retorna true para atualizar a agenda
+    // Salva o evento e pega o objeto retornado com o ID
+    final savedEvent = await DatabaseHelper.instance.createClassEvent(newEventData);
+
+    // --- AGENDA A NOTIFICAÇÃO ---
+    await NotificationHelper().scheduleNotificationForClass(savedEvent);
+
+    if (mounted) Navigator.of(context).pop(true);
   }
 
   @override

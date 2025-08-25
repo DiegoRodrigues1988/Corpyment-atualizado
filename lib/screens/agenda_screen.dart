@@ -1,13 +1,13 @@
 // lib/screens/agenda_screen.dart
 import 'dart:collection';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; // <-- Import corrigido aqui
 import 'package:table_calendar/table_calendar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../helpers/database_helper.dart';
+import '../helpers/notification_helper.dart';
 import '../models/class_event_model.dart';
 import 'schedule_class_screen.dart';
 
-// Função auxiliar para o LinkedHashMap, garantindo que as datas sejam comparadas corretamente.
 int getHashCode(DateTime key) {
   return key.day * 1000000 + key.month * 10000 + key.year;
 }
@@ -23,10 +23,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  // Armazena todos os eventos carregados, organizados por dia.
   late final LinkedHashMap<DateTime, List<ClassEvent>> _eventsByDay;
-
-  // Controla a lista de eventos para o dia que foi selecionado.
   List<ClassEvent> _selectedDayEvents = [];
 
   @override
@@ -40,29 +37,24 @@ class _AgendaScreenState extends State<AgendaScreen> {
     _loadAllEvents();
   }
 
-  // Carrega todos os eventos do banco de dados e os organiza no mapa _eventsByDay.
   Future<void> _loadAllEvents() async {
     final allEvents = await DatabaseHelper.instance.readAllEvents();
     _eventsByDay.clear();
     for (final event in allEvents) {
-      // Normaliza a data para ignorar a hora, usando UTC para consistência.
       final day = DateTime.utc(event.date.year, event.date.month, event.date.day);
       if (_eventsByDay[day] == null) {
         _eventsByDay[day] = [];
       }
       _eventsByDay[day]!.add(event);
     }
-    // Atualiza a lista de eventos para o dia atualmente selecionado.
     _selectedDayEvents = _getEventsForDay(_selectedDay!);
-    setState(() {}); // Atualiza a UI para mostrar os marcadores.
+    setState(() {});
   }
 
-  // Função que o calendário usa para saber quais eventos mostrar para cada dia.
   List<ClassEvent> _getEventsForDay(DateTime day) {
     return _eventsByDay[day] ?? [];
   }
 
-  // Chamado quando o usuário toca em um dia no calendário.
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     if (!isSameDay(_selectedDay, selectedDay)) {
       setState(() {
@@ -74,13 +66,40 @@ class _AgendaScreenState extends State<AgendaScreen> {
   }
 
   Future<void> _contactStudent(String studentName) async {
-    // ... (código para contatar aluno permanece o mesmo)
+    final students = await DatabaseHelper.instance.readAllStudents();
+    try {
+      final student = students.firstWhere((s) => s.name.trim() == studentName.trim());
+      final Uri whatsappUri = Uri.parse("https://wa.me/${student.phone}?text=Olá, ${student.name}! Lembrete da sua aula de Pilates hoje.");
+      if (!mounted) return;
+      if (!await launchUrl(whatsappUri, mode: LaunchMode.externalApplication)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Não foi possível abrir o WhatsApp.")));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Não foi possível encontrar o contato para $studentName.")));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Agenda de Aulas')),
+      appBar: AppBar(
+        title: const Text('Agenda de Aulas'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Agendar Nova Aula',
+            onPressed: () async {
+              final result = await Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => ScheduleClassScreen(selectedDate: _selectedDay!)),
+              );
+              if (result == true) {
+                _loadAllEvents();
+              }
+            },
+          )
+        ],
+      ),
       body: Column(
         children: [
           TableCalendar<ClassEvent>(
@@ -90,18 +109,11 @@ class _AgendaScreenState extends State<AgendaScreen> {
             focusedDay: _focusedDay,
             selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
             onDaySelected: _onDaySelected,
-
-            // --- LÓGICA PARA MARCAR OS DIAS ---
             eventLoader: _getEventsForDay,
-
             calendarStyle: CalendarStyle(
               todayDecoration: BoxDecoration(color: Theme.of(context).primaryColor.withAlpha(128), shape: BoxShape.circle),
               selectedDecoration: BoxDecoration(color: Theme.of(context).primaryColor, shape: BoxShape.circle),
-              // Estilo do marcador de evento (o pontinho verde).
-              markerDecoration: BoxDecoration(
-                color: Colors.green[700],
-                shape: BoxShape.circle,
-              ),
+              markerDecoration: BoxDecoration(color: Colors.green[700], shape: BoxShape.circle),
             ),
             headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
           ),
@@ -123,12 +135,14 @@ class _AgendaScreenState extends State<AgendaScreen> {
                       icon: const Icon(Icons.delete_outline, color: Colors.red),
                       onPressed: () async {
                         await DatabaseHelper.instance.deleteClassEvent(event.id!);
-                        _loadAllEvents(); // Recarrega tudo para atualizar os marcadores
+                        await NotificationHelper().cancelNotificationForClass(event.id!);
+                        _loadAllEvents();
                       },
                     ),
                     children: studentNames.map((name) => ListTile(
                       title: Text(name.trim()),
                       trailing: IconButton(
+                        tooltip: 'Avisar no WhatsApp',
                         icon: const Icon(Icons.message, color: Colors.green),
                         onPressed: () => _contactStudent(name.trim()),
                       ),
@@ -139,17 +153,6 @@ class _AgendaScreenState extends State<AgendaScreen> {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () async {
-          final result = await Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => ScheduleClassScreen(selectedDate: _selectedDay!)),
-          );
-          if (result == true) {
-            _loadAllEvents(); // Recarrega tudo para atualizar os marcadores
-          }
-        },
       ),
     );
   }

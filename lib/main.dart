@@ -10,12 +10,12 @@ import 'screens/home_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Configurações de timezone ainda são necessárias
   tz.initializeTimeZones();
-  tz.setLocalLocation(tz.getLocation('America/Sao_Paulo')); // Define o fuso horário
+  tz.setLocalLocation(tz.getLocation('America/Sao_Paulo'));
 
-  final notificationHelper = NotificationHelper();
-  await notificationHelper.initialize();
-  await notificationHelper.scheduleDailyMorningNotification();
+  // Apenas inicializa o helper, sem agendar nada ainda
+  await NotificationHelper().initialize();
 
   runApp(const PilatesCorpymentApp());
 }
