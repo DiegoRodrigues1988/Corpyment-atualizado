@@ -1,6 +1,7 @@
 // lib/screens/home_screen.dart
 
 import 'package:flutter/material.dart';
+import 'agenda_screen.dart';
 import 'student_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,36 +24,31 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              // --- ÍCONE ATUALIZADO ---
+              // --- VOLTAMOS A USAR O ÍCONE ---
               Icon(
-                Icons.sports_gymnastics, // Ícone que remete a ginástica/movimento
+                Icons.sports_gymnastics,
                 size: 100,
-                color: Theme.of(context).primaryColor, // Usa a cor dourada do tema
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Bem-vindo(a) ao seu espaço de bem-estar!',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Gerencie suas aulas e alunos de forma simples.',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-                textAlign: TextAlign.center,
+                color: Theme.of(context).primaryColor,
               ),
               const SizedBox(height: 50),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.calendar_month),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const AgendaScreen()),
+                  );
+                },
+                label: const Text('Ver Agenda de Aulas'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                ),
+              ),
+              const SizedBox(height: 20),
               ElevatedButton.icon(
                 icon: const Icon(Icons.people),
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const StudentListScreen(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const StudentListScreen()),
                   );
                 },
                 label: const Text('Gerenciar Alunos'),
