@@ -29,6 +29,9 @@ class Student {
   final String? schedule;
   final String? instructorNotes;
 
+  // --- NOVA PROPRIEDADE PARA O TREINO ---
+  final int workoutStep;
+
   Student({
     this.id,
     required this.startDate,
@@ -54,9 +57,11 @@ class Student {
     this.paymentDetails,
     this.schedule,
     this.instructorNotes,
+    // Treino (padrão 1 para novos alunos)
+    this.workoutStep = 1,
   });
 
-  Student copyWith({int? id}) => Student(
+  Student copyWith({int? id, int? workoutStep}) => Student(
       id: id ?? this.id,
       startDate: startDate,
       name: name,
@@ -77,7 +82,8 @@ class Student {
       plan: plan,
       paymentDetails: paymentDetails,
       schedule: schedule,
-      instructorNotes: instructorNotes);
+      instructorNotes: instructorNotes,
+      workoutStep: workoutStep ?? this.workoutStep);
 
   Map<String, dynamic> toMap() {
     return {
@@ -102,6 +108,7 @@ class Student {
       'paymentDetails': paymentDetails,
       'schedule': schedule,
       'instructorNotes': instructorNotes,
+      'workoutStep': workoutStep,
     };
   }
 
@@ -128,6 +135,7 @@ class Student {
       paymentDetails: map['paymentDetails'] as String?,
       schedule: map['schedule'] as String?,
       instructorNotes: map['instructorNotes'] as String?,
+      workoutStep: map['workoutStep'] as int? ?? 1,
     );
   }
 }

@@ -19,7 +19,7 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-    return await openDatabase(path, version: 3, onCreate: _createDB, onUpgrade: _upgradeDB);
+    return await openDatabase(path, version: 4, onCreate: _createDB, onUpgrade: _upgradeDB);
   }
 
   Future _createDB(Database db, int version) async {
@@ -35,14 +35,18 @@ class DatabaseHelper {
     if (oldVersion < 3) {
       await _createClassEventsTable(db);
     }
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE students ADD COLUMN workoutStep INTEGER NOT NULL DEFAULT 1');
+    }
   }
 
   Future<void> _createStudentsTable(Database db) async {
-    // ... (código da tabela de alunos permanece o mesmo)
     const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
     const textType = 'TEXT NOT NULL';
     const textTypeOptional = 'TEXT';
     const dateType = 'TEXT NOT NULL';
+    const intType = 'INTEGER NOT NULL DEFAULT 1';
+
     await db.execute('''
       CREATE TABLE students ( 
         id $idType, startDate $dateType, name $textType, email $textType, phone $textType,
@@ -51,7 +55,8 @@ class DatabaseHelper {
         medicalConditions $textTypeOptional, injuryHistory $textTypeOptional, surgeries $textTypeOptional,
         medicalRestrictions $textTypeOptional, medications $textTypeOptional, activityLevel $textTypeOptional,
         plan $textTypeOptional, paymentDetails $textTypeOptional, schedule $textTypeOptional,
-        instructorNotes $textTypeOptional
+        instructorNotes $textTypeOptional,
+        workoutStep $intType
       )
     ''');
   }
@@ -109,7 +114,6 @@ class DatabaseHelper {
     return result.map((json) => ClassEvent.fromMap(json)).toList();
   }
 
-  // --- NOVA FUNÇÃO PARA LER TODOS OS EVENTOS ---
   Future<List<ClassEvent>> readAllEvents() async {
     final db = await instance.database;
     final result = await db.query('class_events');

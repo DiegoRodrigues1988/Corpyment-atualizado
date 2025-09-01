@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../helpers/database_helper.dart';
 import '../models/student_model.dart';
-import 'edit_student_details_screen.dart'; // Importe a nova tela de edição
+import 'edit_student_details_screen.dart';
 
 class StudentDetailScreen extends StatefulWidget {
   final Student student;
@@ -17,13 +17,26 @@ class StudentDetailScreen extends StatefulWidget {
 class _StudentDetailScreenState extends State<StudentDetailScreen> {
   late Student _student;
 
+  final List<String> _workoutSteps = const [
+    'Cadillac', 'Barrel', 'Chair', 'Reformer', 'Mat', 'Acessórios'
+  ];
+
   @override
   void initState() {
     super.initState();
     _student = widget.student;
   }
 
-  // Navega para a tela de edição e atualiza os dados ao voltar
+  Future<void> _updateWorkoutStep(int step) async {
+    final nextStep = (step == _workoutSteps.length) ? 1 : step + 1;
+    final updatedStudent = _student.copyWith(workoutStep: nextStep);
+    await DatabaseHelper.instance.update(updatedStudent);
+
+    setState(() {
+      _student = updatedStudent;
+    });
+  }
+
   void _navigateToEditScreen() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
@@ -32,8 +45,8 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     );
 
     if (result == true && mounted) {
-      // Recarrega os dados do aluno do banco de dados para garantir que estão atualizados
-      final updatedStudent = await DatabaseHelper.instance.readOneStudent(_student.id!);
+      final updatedStudent =
+      await DatabaseHelper.instance.readOneStudent(_student.id!);
       setState(() {
         _student = updatedStudent;
       });
@@ -46,7 +59,6 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
       appBar: AppBar(
         title: Text(_student.name),
         actions: [
-          // --- BOTÃO DE EDITAR ---
           IconButton(
             icon: const Icon(Icons.edit_note),
             tooltip: 'Editar Ficha',
@@ -57,6 +69,8 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
+          _buildWorkoutTracker(context),
+          const SizedBox(height: 16),
           _buildSectionCard(
             context,
             title: 'Dados Pessoais e de Contato',
@@ -94,6 +108,71 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     );
   }
 
+  Widget _buildWorkoutTracker(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            ListTile(
+              leading: Icon(Icons.checklist, color: Theme.of(context).primaryColor),
+              title: const Text('Progresso do Treino',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            ),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: _workoutSteps.asMap().entries.map((entry) {
+                  final int index = entry.key;
+                  final String name = entry.value;
+                  final int currentStepNumber = index + 1;
+
+                  final bool isDone = currentStepNumber < _student.workoutStep;
+                  final bool isNext = currentStepNumber == _student.workoutStep;
+
+                  Color chipColor;
+                  Color textColor;
+
+                  if (isDone) {
+                    chipColor = Colors.orange.shade300;
+                    textColor = Colors.white;
+                  } else if (isNext) {
+                    chipColor = Colors.green.shade400;
+                    textColor = Colors.white;
+                  } else {
+                    chipColor = Colors.grey.shade300;
+                    textColor = Colors.black87;
+                  }
+
+                  return GestureDetector(
+                    onTap: () {
+                      _updateWorkoutStep(currentStepNumber);
+                    },
+                    child: Chip(
+                      backgroundColor: chipColor,
+                      label: Text(
+                        '${currentStepNumber}. $name',
+                        style: TextStyle(
+                            color: textColor, fontWeight: FontWeight.bold),
+                      ),
+                      avatar:
+                      isDone ? Icon(Icons.check, color: textColor, size: 18) : null,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionCard(BuildContext context, {required String title, required IconData icon, required Map<String, String?> details}) {
     final validDetails = Map.fromEntries(details.entries.where((entry) => entry.value != null && entry.value!.trim().isNotEmpty));
     if (validDetails.isEmpty) return const SizedBox.shrink();
@@ -107,11 +186,14 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
           children: [
             ListTile(
               leading: Icon(icon, color: Theme.of(context).primaryColor),
-              title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              title: Text(title,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 18)),
             ),
             const Divider(),
             ...validDetails.entries.map((entry) {
-              return _buildDetailRow(context, title: entry.key, subtitle: entry.value!);
+              return _buildDetailRow(context,
+                  title: entry.key, subtitle: entry.value!);
             }).toList(),
           ],
         ),
@@ -119,14 +201,18 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     );
   }
 
-  Widget _buildDetailRow(BuildContext context, {required String title, required String subtitle}) {
+  Widget _buildDetailRow(
+      BuildContext context, {required String title, required String subtitle}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$title: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(child: Text(subtitle, style: const TextStyle(fontSize: 16, color: Colors.black87))),
+          Text('$title: ',
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(
+              child: Text(subtitle,
+                  style: const TextStyle(fontSize: 16, color: Colors.black87))),
         ],
       ),
     );
