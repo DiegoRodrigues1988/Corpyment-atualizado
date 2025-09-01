@@ -4,9 +4,10 @@ class ClassEvent {
   final int? id;
   final DateTime date;
   final String time;
-  final String studentIds; // IDs dos alunos, separados por vírgula. Ex: "1,5,12"
-  final String studentNames; // Nomes para exibição rápida. Ex: "Ana, Bruno, Carla"
-  final int instructorId; // --- NOVO CAMPO ---
+  final String studentIds;
+  final String studentNames;
+  final int instructorId;
+  final bool isConcluded; // --- NOVO CAMPO ---
 
   ClassEvent({
     this.id,
@@ -14,27 +15,31 @@ class ClassEvent {
     required this.time,
     required this.studentIds,
     required this.studentNames,
-    this.instructorId = 1, // --- NOVO CAMPO (padrão 1) ---
+    this.instructorId = 1,
+    this.isConcluded = false, // --- NOVO CAMPO (padrão 'false') ---
   });
 
-  ClassEvent copyWith({int? id, int? instructorId}) {
+  ClassEvent copyWith({int? id, int? instructorId, bool? isConcluded}) {
     return ClassEvent(
-        id: id ?? this.id,
-        date: date,
-        time: time,
-        studentIds: studentIds,
-        studentNames: studentNames,
-        instructorId: instructorId ?? this.instructorId);
+      id: id ?? this.id,
+      date: date,
+      time: time,
+      studentIds: studentIds,
+      studentNames: studentNames,
+      instructorId: instructorId ?? this.instructorId,
+      isConcluded: isConcluded ?? this.isConcluded, // --- NOVO CAMPO ---
+    );
   }
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'date': date.toIso8601String().substring(0, 10), // Salva apenas a data (YYYY-MM-DD)
+      'date': date.toIso8601String().substring(0, 10),
       'time': time,
       'studentIds': studentIds,
       'studentNames': studentNames,
-      'instructorId': instructorId, // --- NOVO CAMPO ---
+      'instructorId': instructorId,
+      'isConcluded': isConcluded ? 1 : 0, // --- NOVO CAMPO (salva como 1 ou 0) ---
     };
   }
 
@@ -45,7 +50,8 @@ class ClassEvent {
       time: map['time'] as String,
       studentIds: map['studentIds'] as String,
       studentNames: map['studentNames'] as String,
-      instructorId: map['instructorId'] as int? ?? 1, // --- NOVO CAMPO (com padrão) ---
+      instructorId: map['instructorId'] as int? ?? 1,
+      isConcluded: (map['isConcluded'] as int? ?? 0) == 1, // --- NOVO CAMPO (lê 1 ou 0) ---
     );
   }
 }

@@ -1,5 +1,3 @@
-// lib/screens/student_registration_screen.dart
-
 import 'package:flutter/material.dart';
 import '../helpers/database_helper.dart';
 import '../models/student_model.dart';

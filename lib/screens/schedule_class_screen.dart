@@ -1,5 +1,4 @@
 // lib/screens/schedule_class_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../helpers/database_helper.dart';
@@ -23,26 +22,17 @@ class _ScheduleClassScreenState extends State<ScheduleClassScreen> {
   final TextEditingController _searchController = TextEditingController();
   int _selectedInstructorId = 1;
 
-  // --- ADICIONADO --- Mapa de cores dos instrutores (copiado da tela da agenda)
   final Map<int, Color> _instructorColors = {
-    1: Colors.purple,
-    2: Colors.green,
-    3: Colors.blue.shade900,
-    4: Colors.orange,
-    5: Colors.pink,
-    6: Colors.grey.shade300,
-    7: Colors.black87,
-    8: Colors.yellow.shade700,
-    9: Colors.lightGreen,
+    1: Colors.purple, 2: Colors.green, 3: Colors.blue.shade900,
+    4: Colors.orange, 5: Colors.pink, 6: Colors.grey.shade300,
+    7: Colors.black87, 8: Colors.yellow.shade700, 9: Colors.lightGreen,
     10: Colors.grey.shade700,
   };
 
-  // --- ADICIONADO --- Função para pegar a cor do texto que contrasta com o fundo
   Color getTextColorForBackground(Color backgroundColor) {
-    if (ThemeData.estimateBrightnessForColor(backgroundColor) == Brightness.dark) {
-      return Colors.white;
-    }
-    return Colors.black;
+    return ThemeData.estimateBrightnessForColor(backgroundColor) == Brightness.dark
+        ? Colors.white
+        : Colors.black;
   }
 
   @override
@@ -104,7 +94,6 @@ class _ScheduleClassScreenState extends State<ScheduleClassScreen> {
     if (mounted) Navigator.of(context).pop(true);
   }
 
-  // --- WIDGET MODIFICADO ---
   Widget _buildInstructorSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,19 +124,14 @@ class _ScheduleClassScreenState extends State<ScheduleClassScreen> {
                     });
                   }
                 },
-                // Cor do chip quando está SELECIONADO
                 selectedColor: color,
-                // Cor do chip quando NÃO está selecionado (uma versão mais clara)
-                backgroundColor: color.withOpacity(0.25),
-                // Cor do texto
+                backgroundColor: color.withAlpha(64), // Correção de 'withOpacity'
                 labelStyle: TextStyle(
-                  // Quando selecionado, usa a cor de texto ideal, senão, usa a cor principal
                   color: isSelected ? textColor : color,
                   fontWeight: FontWeight.bold,
                 ),
-                // Adiciona um ícone de check quando selecionado para maior clareza
                 avatar: isSelected ? Icon(Icons.check, color: textColor, size: 16) : null,
-                side: isSelected ? BorderSide.none : BorderSide(color: color.withOpacity(0.6)),
+                side: isSelected ? BorderSide.none : BorderSide(color: color.withAlpha(153)), // Correção de 'withOpacity'
               );
             }),
           ),

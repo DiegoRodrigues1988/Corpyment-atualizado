@@ -1,60 +1,52 @@
-// lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'helpers/notification_helper.dart';
 import 'screens/home_screen.dart';
 
 Future<void> main() async {
+  // Garante que os bindings do Flutter foram inicializados
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Configurações de timezone ainda são necessárias
+  // Inicializa os dados de fuso horário
   tz.initializeTimeZones();
   tz.setLocalLocation(tz.getLocation('America/Sao_Paulo'));
 
-  // Apenas inicializa o helper, sem agendar nada ainda
+  // Inicializa o helper de notificações
   await NotificationHelper().initialize();
 
-  runApp(const PilatesCorpymentApp());
+  // Inicializa a formatação de datas para o local 'pt_BR'
+  await initializeDateFormatting('pt_BR', null);
+
+  runApp(const MyApp());
 }
 
-class PilatesCorpymentApp extends StatelessWidget {
-  const PilatesCorpymentApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const Color goldColor = Color(0xFFD4AF37);
     return MaterialApp(
       title: 'Pilates Corpyment',
-      debugShowCheckedModeBanner: false,
+      // Configura o tema do aplicativo
+      theme: ThemeData(
+        primarySwatch: Colors.amber, // <--- AQUI ESTÁ A COR DOURADA CORRIGIDA
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        useMaterial3: true,
+      ),
+      // Configura o app para usar o idioma português
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('pt', 'BR')],
-      locale: const Locale('pt', 'BR'),
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: goldColor, primary: goldColor, brightness: Brightness.light),
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white, foregroundColor: Colors.black87,
-          elevation: 1.0, surfaceTintColor: Colors.transparent,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: goldColor, foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          ),
-        ),
-        textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: goldColor)),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(backgroundColor: goldColor, foregroundColor: Colors.white),
-      ),
+      supportedLocales: const [
+        Locale('pt', 'BR'),
+      ],
       home: const HomeScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

@@ -1,5 +1,3 @@
-// lib/models/student_model.dart
-
 class Student {
   final int? id;
   final DateTime startDate;
@@ -28,14 +26,11 @@ class Student {
   final String? paymentDetails;
   final String? schedule;
   final String? instructorNotes;
-
-  // --- NOVA PROPRIEDADE PARA O TREINO ---
   final int workoutStep;
 
   Student({
     this.id,
     required this.startDate,
-    // Pessoais
     required this.name,
     required this.email,
     required this.phone,
@@ -43,7 +38,6 @@ class Student {
     this.cpf,
     this.address,
     this.emergencyContact,
-    // Saúde
     this.weight,
     this.height,
     this.medicalConditions,
@@ -52,12 +46,10 @@ class Student {
     this.medicalRestrictions,
     this.medications,
     this.activityLevel,
-    // Administrativo
     this.plan,
     this.paymentDetails,
     this.schedule,
     this.instructorNotes,
-    // Treino (padrão 1 para novos alunos)
     this.workoutStep = 1,
   });
 

@@ -1,5 +1,3 @@
-// lib/screens/home_screen.dart
-
 import 'package:flutter/material.dart';
 import 'agenda_screen.dart';
 import 'student_list_screen.dart';
@@ -24,7 +22,6 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              // --- VOLTAMOS A USAR O ÍCONE ---
               Icon(
                 Icons.sports_gymnastics,
                 size: 100,

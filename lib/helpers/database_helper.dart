@@ -19,8 +19,8 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-    // ATUALIZE A VERSÃO PARA 5
-    return await openDatabase(path, version: 5, onCreate: _createDB, onUpgrade: _upgradeDB);
+    // ATUALIZE A VERSÃO PARA 6
+    return await openDatabase(path, version: 6, onCreate: _createDB, onUpgrade: _upgradeDB);
   }
 
   Future _createDB(Database db, int version) async {
@@ -39,9 +39,12 @@ class DatabaseHelper {
     if (oldVersion < 4) {
       await db.execute('ALTER TABLE students ADD COLUMN workoutStep INTEGER NOT NULL DEFAULT 1');
     }
-    // --- NOVA LÓGICA DE MIGRAÇÃO ---
     if (oldVersion < 5) {
       await db.execute('ALTER TABLE class_events ADD COLUMN instructorId INTEGER NOT NULL DEFAULT 1');
+    }
+    // --- NOVA LÓGICA DE MIGRAÇÃO ---
+    if (oldVersion < 6) {
+      await db.execute('ALTER TABLE class_events ADD COLUMN isConcluded INTEGER NOT NULL DEFAULT 0');
     }
   }
 
@@ -71,12 +74,13 @@ class DatabaseHelper {
       CREATE TABLE class_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, time TEXT NOT NULL,
         studentIds TEXT NOT NULL, studentNames TEXT NOT NULL,
-        instructorId INTEGER NOT NULL DEFAULT 1 
+        instructorId INTEGER NOT NULL DEFAULT 1,
+        isConcluded INTEGER NOT NULL DEFAULT 0 
       )
     ''');
   }
 
-  // --- MÉTODOS PARA ALUNOS ---
+  // --- MÉTODOS PARA ALUNOS (sem alterações) ---
   Future<Student> create(Student student) async {
     final db = await instance.database;
     final id = await db.insert('students', student.toMap());
@@ -113,11 +117,10 @@ class DatabaseHelper {
     return event.copyWith(id: id);
   }
 
-  Future<List<ClassEvent>> readEventsForDate(DateTime date) async {
+  // --- NOVO MÉTODO PARA ATUALIZAR UMA AULA ---
+  Future<int> updateClassEvent(ClassEvent event) async {
     final db = await instance.database;
-    final dateString = date.toIso8601String().substring(0, 10);
-    final result = await db.query('class_events', where: 'date = ?', whereArgs: [dateString]);
-    return result.map((json) => ClassEvent.fromMap(json)).toList();
+    return db.update('class_events', event.toMap(), where: 'id = ?', whereArgs: [event.id]);
   }
 
   Future<List<ClassEvent>> readAllEvents() async {

@@ -1,5 +1,3 @@
-// lib/screens/edit_student_details_screen.dart
-
 import 'package:flutter/material.dart';
 import '../helpers/database_helper.dart';
 import '../models/student_model.dart';
@@ -46,6 +44,7 @@ class _EditStudentDetailsScreenState extends State<EditStudentDetailsScreen> {
       final updatedStudent = Student(
         id: widget.student.id,
         startDate: widget.student.startDate,
+        workoutStep: widget.student.workoutStep,
         name: _controllers['name']!.text, email: _controllers['email']!.text, phone: _controllers['phone']!.text,
         birthDate: _controllers['birthDate']!.text, cpf: _controllers['cpf']!.text, address: _controllers['address']!.text,
         emergencyContact: _controllers['emergencyContact']!.text, weight: _controllers['weight']!.text, height: _controllers['height']!.text,
@@ -61,7 +60,7 @@ class _EditStudentDetailsScreenState extends State<EditStudentDetailsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ficha atualizada com sucesso!'), backgroundColor: Colors.green),
         );
-        Navigator.of(context).pop(true); // Retorna 'true' para indicar que houve atualização
+        Navigator.of(context).pop(true);
       }
     }
   }

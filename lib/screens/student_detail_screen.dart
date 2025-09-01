@@ -1,5 +1,4 @@
 // lib/screens/student_detail_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../helpers/database_helper.dart';
@@ -37,7 +36,8 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     });
   }
 
-  void _navigateToEditScreen() async {
+  Future<void> _navigateToEditScreen() async {
+    if (!mounted) return;
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => EditStudentDetailsScreen(student: _student),
@@ -194,7 +194,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
             ...validDetails.entries.map((entry) {
               return _buildDetailRow(context,
                   title: entry.key, subtitle: entry.value!);
-            }).toList(),
+            }),
           ],
         ),
       ),

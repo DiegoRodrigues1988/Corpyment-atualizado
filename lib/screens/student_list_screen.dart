@@ -1,10 +1,8 @@
-// lib/screens/student_list_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../helpers/database_helper.dart';
 import '../models/student_model.dart';
-import 'student_detail_screen.dart'; // Importe a nova tela de detalhes
+import 'student_detail_screen.dart';
 import 'student_registration_screen.dart';
 
 class StudentListScreen extends StatefulWidget {
@@ -114,15 +112,13 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       trailing: Text(
                         'Início: ${DateFormat('dd/MM/yy').format(student.startDate)}',
                       ),
-                      // --- MUDANÇA PRINCIPAL AQUI ---
-                      // Adiciona a função de toque no item da lista.
-                      onTap: () {
-                        // Navega para a tela de detalhes, passando o aluno selecionado.
-                        Navigator.of(context).push(
+                      onTap: () async {
+                        await Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (context) => StudentDetailScreen(student: student),
                           ),
                         );
+                        _refreshStudents(); // Atualiza a lista caso algo mude
                       },
                     ),
                   ),
