@@ -6,6 +6,7 @@ class ClassEvent {
   final String time;
   final String studentIds; // IDs dos alunos, separados por vírgula. Ex: "1,5,12"
   final String studentNames; // Nomes para exibição rápida. Ex: "Ana, Bruno, Carla"
+  final int instructorId; // --- NOVO CAMPO ---
 
   ClassEvent({
     this.id,
@@ -13,7 +14,18 @@ class ClassEvent {
     required this.time,
     required this.studentIds,
     required this.studentNames,
+    this.instructorId = 1, // --- NOVO CAMPO (padrão 1) ---
   });
+
+  ClassEvent copyWith({int? id, int? instructorId}) {
+    return ClassEvent(
+        id: id ?? this.id,
+        date: date,
+        time: time,
+        studentIds: studentIds,
+        studentNames: studentNames,
+        instructorId: instructorId ?? this.instructorId);
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -22,6 +34,7 @@ class ClassEvent {
       'time': time,
       'studentIds': studentIds,
       'studentNames': studentNames,
+      'instructorId': instructorId, // --- NOVO CAMPO ---
     };
   }
 
@@ -32,6 +45,7 @@ class ClassEvent {
       time: map['time'] as String,
       studentIds: map['studentIds'] as String,
       studentNames: map['studentNames'] as String,
+      instructorId: map['instructorId'] as int? ?? 1, // --- NOVO CAMPO (com padrão) ---
     );
   }
 }

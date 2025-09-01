@@ -19,7 +19,8 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-    return await openDatabase(path, version: 4, onCreate: _createDB, onUpgrade: _upgradeDB);
+    // ATUALIZE A VERSÃO PARA 5
+    return await openDatabase(path, version: 5, onCreate: _createDB, onUpgrade: _upgradeDB);
   }
 
   Future _createDB(Database db, int version) async {
@@ -37,6 +38,10 @@ class DatabaseHelper {
     }
     if (oldVersion < 4) {
       await db.execute('ALTER TABLE students ADD COLUMN workoutStep INTEGER NOT NULL DEFAULT 1');
+    }
+    // --- NOVA LÓGICA DE MIGRAÇÃO ---
+    if (oldVersion < 5) {
+      await db.execute('ALTER TABLE class_events ADD COLUMN instructorId INTEGER NOT NULL DEFAULT 1');
     }
   }
 
@@ -65,7 +70,8 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE class_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, time TEXT NOT NULL,
-        studentIds TEXT NOT NULL, studentNames TEXT NOT NULL
+        studentIds TEXT NOT NULL, studentNames TEXT NOT NULL,
+        instructorId INTEGER NOT NULL DEFAULT 1 
       )
     ''');
   }
@@ -104,7 +110,7 @@ class DatabaseHelper {
   Future<ClassEvent> createClassEvent(ClassEvent event) async {
     final db = await instance.database;
     final id = await db.insert('class_events', event.toMap());
-    return ClassEvent(id: id, date: event.date, time: event.time, studentIds: event.studentIds, studentNames: event.studentNames);
+    return event.copyWith(id: id);
   }
 
   Future<List<ClassEvent>> readEventsForDate(DateTime date) async {

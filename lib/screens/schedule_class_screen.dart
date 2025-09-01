@@ -1,4 +1,5 @@
 // lib/screens/schedule_class_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../helpers/database_helper.dart';
@@ -17,20 +18,43 @@ class ScheduleClassScreen extends StatefulWidget {
 class _ScheduleClassScreenState extends State<ScheduleClassScreen> {
   TimeOfDay? _selectedTime;
   List<Student> _allStudents = [];
-  List<Student> _filteredStudents = []; // Nova lista para os resultados da busca
+  List<Student> _filteredStudents = [];
   final List<Student> _selectedStudents = [];
-  final TextEditingController _searchController = TextEditingController(); // Controlador para o campo de busca
+  final TextEditingController _searchController = TextEditingController();
+  int _selectedInstructorId = 1;
+
+  // --- ADICIONADO --- Mapa de cores dos instrutores (copiado da tela da agenda)
+  final Map<int, Color> _instructorColors = {
+    1: Colors.purple,
+    2: Colors.green,
+    3: Colors.blue.shade900,
+    4: Colors.orange,
+    5: Colors.pink,
+    6: Colors.grey.shade300,
+    7: Colors.black87,
+    8: Colors.yellow.shade700,
+    9: Colors.lightGreen,
+    10: Colors.grey.shade700,
+  };
+
+  // --- ADICIONADO --- Função para pegar a cor do texto que contrasta com o fundo
+  Color getTextColorForBackground(Color backgroundColor) {
+    if (ThemeData.estimateBrightnessForColor(backgroundColor) == Brightness.dark) {
+      return Colors.white;
+    }
+    return Colors.black;
+  }
 
   @override
   void initState() {
     super.initState();
     _loadStudents();
-    _searchController.addListener(_filterStudents); // Adiciona um "ouvinte" para a busca
+    _searchController.addListener(_filterStudents);
   }
 
   @override
   void dispose() {
-    _searchController.dispose(); // Libera o controlador da memória
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -38,11 +62,10 @@ class _ScheduleClassScreenState extends State<ScheduleClassScreen> {
     final students = await DatabaseHelper.instance.readAllStudents();
     setState(() {
       _allStudents = students;
-      _filteredStudents = students; // No início, a lista filtrada é a lista completa
+      _filteredStudents = students;
     });
   }
 
-  // Função que filtra os alunos com base no que foi digitado
   void _filterStudents() {
     final query = _searchController.text.toLowerCase();
     setState(() {
@@ -72,6 +95,7 @@ class _ScheduleClassScreenState extends State<ScheduleClassScreen> {
       time: _selectedTime!.format(context),
       studentIds: _selectedStudents.map((s) => s.id.toString()).join(','),
       studentNames: _selectedStudents.map((s) => s.name).join(', '),
+      instructorId: _selectedInstructorId,
     );
 
     final savedEvent = await DatabaseHelper.instance.createClassEvent(newEventData);
@@ -80,65 +104,116 @@ class _ScheduleClassScreenState extends State<ScheduleClassScreen> {
     if (mounted) Navigator.of(context).pop(true);
   }
 
+  // --- WIDGET MODIFICADO ---
+  Widget _buildInstructorSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 16.0, top: 16, bottom: 8),
+          child: Text('Selecione o Instrutor(a)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          child: Wrap(
+            spacing: 8.0,
+            runSpacing: 4.0,
+            alignment: WrapAlignment.center,
+            children: List.generate(10, (index) {
+              final instructorId = index + 1;
+              final isSelected = _selectedInstructorId == instructorId;
+              final color = _instructorColors[instructorId] ?? Colors.grey;
+              final textColor = getTextColorForBackground(color);
+
+              return ChoiceChip(
+                label: Text('Inst. $instructorId'),
+                selected: isSelected,
+                onSelected: (bool selected) {
+                  if (selected) {
+                    setState(() {
+                      _selectedInstructorId = instructorId;
+                    });
+                  }
+                },
+                // Cor do chip quando está SELECIONADO
+                selectedColor: color,
+                // Cor do chip quando NÃO está selecionado (uma versão mais clara)
+                backgroundColor: color.withOpacity(0.25),
+                // Cor do texto
+                labelStyle: TextStyle(
+                  // Quando selecionado, usa a cor de texto ideal, senão, usa a cor principal
+                  color: isSelected ? textColor : color,
+                  fontWeight: FontWeight.bold,
+                ),
+                // Adiciona um ícone de check quando selecionado para maior clareza
+                avatar: isSelected ? Icon(Icons.check, color: textColor, size: 16) : null,
+                side: isSelected ? BorderSide.none : BorderSide(color: color.withOpacity(0.6)),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Agendar Aula para ${DateFormat('dd/MM/yyyy').format(widget.selectedDate)}'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            ListTile(
-              title: Text(_selectedTime == null ? 'Selecionar Horário' : 'Horário: ${_selectedTime!.format(context)}'),
-              trailing: const Icon(Icons.access_time),
-              onTap: _pickTime,
-            ),
-            const Divider(),
-
-            // --- NOVO CAMPO DE BUSCA ---
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  labelText: 'Buscar aluno pelo nome...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
+      body: Column(
+        children: [
+          ListTile(
+            title: Text(_selectedTime == null ? 'Selecionar Horário' : 'Horário: ${_selectedTime!.format(context)}'),
+            trailing: const Icon(Icons.access_time),
+            onTap: _pickTime,
+          ),
+          const Divider(),
+          _buildInstructorSelector(),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Buscar aluno pelo nome...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
               ),
             ),
-
-            Expanded(
-              child: _filteredStudents.isEmpty
-                  ? const Center(child: Text('Nenhum aluno encontrado.'))
-                  : ListView.builder(
-                itemCount: _filteredStudents.length, // Usa a lista filtrada
-                itemBuilder: (context, index) {
-                  final student = _filteredStudents[index]; // Usa a lista filtrada
-                  final isSelected = _selectedStudents.contains(student);
-                  return CheckboxListTile(
-                    title: Text(student.name),
-                    value: isSelected,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedStudents.add(student);
-                        } else {
-                          _selectedStudents.remove(student);
-                        }
-                      });
-                    },
-                  );
-                },
-              ),
+          ),
+          Expanded(
+            child: _filteredStudents.isEmpty
+                ? const Center(child: Text('Nenhum aluno encontrado.'))
+                : ListView.builder(
+              itemCount: _filteredStudents.length,
+              itemBuilder: (context, index) {
+                final student = _filteredStudents[index];
+                final isSelected = _selectedStudents.contains(student);
+                return CheckboxListTile(
+                  title: Text(student.name),
+                  value: isSelected,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      if (value == true) {
+                        _selectedStudents.add(student);
+                      } else {
+                        _selectedStudents.remove(student);
+                      }
+                    });
+                  },
+                );
+              },
             ),
-            ElevatedButton(onPressed: _saveClass, child: const Text('Salvar Aula')),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(onPressed: _saveClass, child: const Text('Salvar Aula')),
+          ),
+        ],
       ),
     );
   }
